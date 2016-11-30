@@ -95,7 +95,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>..\openGL\lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;glfw3.lib;glew32sd.lib;SOIL.lib;assimp.lib;irrKlang.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;glfw3.lib;glew32sd.lib;SOIL.lib;assimp.lib;irrKlang.lib;freetyped.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -160,6 +160,7 @@
     <ClInclude Include="Shader.h" />
     <ClInclude Include="sprite_renderer.h" />
     <ClInclude Include="Texture.h" />
+    <ClInclude Include="text_renderer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ball_object.cpp" />
@@ -173,6 +174,7 @@
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="sprite_render.cpp" />
     <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="text_renderer.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

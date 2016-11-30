@@ -13,6 +13,7 @@
 #include "ball_object.h"
 #include "particle_generator.h"
 #include "post_processor.h"
+#include "text_renderer.h"
 #include <irrklang/irrKlang.h>
 using namespace irrklang;
 
@@ -25,6 +26,7 @@ GameObject        *Player;
 BallObject        *Ball;
 ParticleGenerator *Particles;
 PostProcessor     *Effects;
+TextRenderer	  *Text;
 GLfloat            ShakeTime = 0.0f;
 
 Game::Game(GLuint width, GLuint height)
@@ -40,6 +42,7 @@ Game::~Game()
 	delete Ball;
 	delete Particles;
 	delete Effects;
+	delete Text;
 	SoundEngine->drop();
 }
 
@@ -94,7 +97,12 @@ void Game::Init()
 	//Effects->Chaos = GL_TRUE;
 
 	//play background
+	//notice that "ikpMP3.dll" need to be put in the directory "../Debug" where the .exe file is 
+	//If irrKlang doesn't play mp3s in your application, you probably forgot to copy the mp3 playback plugin to your application directory (The location where your .exe file is).
 	SoundEngine->play2D("audio/breakout.mp3", GL_TRUE);
+
+	Text = new TextRenderer(this->Width, this->Height);
+	Text->Load("fonts/arial.ttf", 24);
 }
 
 void Game::Update(GLfloat dt)

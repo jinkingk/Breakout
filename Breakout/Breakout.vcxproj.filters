@@ -48,6 +48,9 @@
     <ClInclude Include="power_up.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="text_renderer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Game.cpp">
@@ -81,6 +84,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="post_processor.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="text_renderer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
