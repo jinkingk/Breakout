@@ -36,11 +36,11 @@ enum Direction {
 typedef std::tuple<GLboolean, Direction, glm::vec2> Collision; // <collision?, what direction?, difference vector center - closest point>
 
 															   // Initial size of the player paddle
-const glm::vec2 PLAYER_SIZE(100, 20);
+const glm::vec2 PLAYER_SIZE(800, 20);
 // Initial velocity of the player paddle
 const GLfloat PLAYER_VELOCITY(500.0f);
 // Initial velocity of the Ball
-const glm::vec2 INITIAL_BALL_VELOCITY(100.0f, -350.0f);
+const glm::vec2 INITIAL_BALL_VELOCITY(300.0f, -650.0f);
 // Radius of the ball object
 const GLfloat BALL_RADIUS = 12.5f;
 
@@ -53,10 +53,12 @@ public:
 	// Game state
 	GameState              State;
 	GLboolean              Keys[1024];
+	GLboolean			   KeysProcessed[1024];
 	GLuint                 Width, Height;
 	std::vector<GameLevel> Levels;
 	GLuint                 Level;
 	std::vector<PowerUp>   PowerUps;
+	GLuint Lives;
 	// Constructor/Destructor
 	Game(GLuint width, GLuint height);
 	~Game();

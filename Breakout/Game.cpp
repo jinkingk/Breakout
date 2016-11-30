@@ -15,6 +15,8 @@
 #include "post_processor.h"
 #include "text_renderer.h"
 #include <irrklang/irrKlang.h>
+#include <algorithm>
+#include <sstream>
 using namespace irrklang;
 
 //sound
@@ -30,7 +32,7 @@ TextRenderer	  *Text;
 GLfloat            ShakeTime = 0.0f;
 
 Game::Game(GLuint width, GLuint height)
-	: State(GAME_ACTIVE), Keys(), Width(width), Height(height)
+	: State(GAME_ACTIVE), Keys(), Width(width), Height(height), KeysProcessed()
 {
 
 }
@@ -86,6 +88,8 @@ void Game::Init()
 	this->Levels.push_back(three);
 	this->Levels.push_back(four);
 	this->Level = 0;
+	//life
+	this->Lives = 3;
 	// Configure game objects
 	glm::vec2 playerPos = glm::vec2(this->Width / 2 - PLAYER_SIZE.x / 2, this->Height - PLAYER_SIZE.y);
 	Player = new GameObject(playerPos, PLAYER_SIZE, ResourceManager::GetTexture("paddle"));
@@ -125,14 +129,49 @@ void Game::Update(GLfloat dt)
 	// Check loss condition
 	if (Ball->Position.y >= this->Height) // Did ball reach bottom edge?
 	{
+		--this->Lives;
+		if (this->Lives<=0)
+		{
+			this->ResetLevel();
+			this->State = GAME_MENU;
+		}	
+		this->ResetPlayer();
+	}
+
+	if (this->State == GAME_ACTIVE &&this->Levels[this->Level].IsCompleted())
+	{
 		this->ResetLevel();
 		this->ResetPlayer();
+		Effects->Chaos = GL_TRUE;
+		this->State = GAME_WIN;
 	}
 }
 
 
 void Game::ProcessInput(GLfloat dt)
 {
+	if (this->State == GAME_MENU)
+	{
+		if (this->Keys[GLFW_KEY_ENTER] && !this->KeysProcessed[GLFW_KEY_ENTER])
+		{
+			this->State = GAME_ACTIVE;
+			this->KeysProcessed[GLFW_KEY_ENTER] = GL_TRUE;
+		}
+		if (this->Keys[GLFW_KEY_W] && !this->KeysProcessed[GLFW_KEY_W])
+		{
+			this->Level = (this->Level + 1) % 4;
+			this->KeysProcessed[GLFW_KEY_W] = GL_TRUE;
+		}
+		if (this->Keys[GLFW_KEY_S] && !this->KeysProcessed[GLFW_KEY_S])
+		{
+			if (this->Level > 0)
+				--this->Level;
+			else
+				this->Level = 3;
+			this->KeysProcessed[GLFW_KEY_S] = GL_TRUE;
+		}
+	}
+
 	if (this->State == GAME_ACTIVE)
 	{
 		GLfloat velocity = PLAYER_VELOCITY * dt;
@@ -155,14 +194,23 @@ void Game::ProcessInput(GLfloat dt)
 					Ball->Position.x += velocity;
 			}
 		}
-		if (this->Keys[GLFW_KEY_SPACE])
+		if (this->Keys[GLFW_KEY_SPACE]) {
 			Ball->Stuck = GL_FALSE;
+		}			
+	}
+	if (this->State == GAME_WIN)
+	{
+		if (this->Keys[GLFW_KEY_ENTER])
+		{
+			Effects->Chaos = GL_FALSE;
+			this->State = GAME_MENU;
+		}
 	}
 }
 
 void Game::Render()
 {
-	if (this->State == GAME_ACTIVE)
+	if (this->State == GAME_ACTIVE||this->State == GAME_MENU|| this->State == GAME_WIN)
 	{
 		// Begin rendering to postprocessing quad
 		Effects->BeginRender();
@@ -186,19 +234,38 @@ void Game::Render()
 		Effects->EndRender();
 		// Render postprocessing quad
 		Effects->Render(glfwGetTime());
+
+		std::stringstream ss; 
+		ss << this->Lives;
+		Text->RenderText("Lives:" + ss.str(), 5.0f, 5.0f, 1.0f);
+	}
+	if (this->State == GAME_MENU) {
+		Text->RenderText("Press ENTER to start", 250.0f, Height / 2, 1.0f);
+		Text->RenderText("Press W or S to select level", 245.0f, Height / 2 + 20.0f, 0.75f);
+	}
+	if (this->State == GAME_WIN)
+	{
+		Text->RenderText(
+			"You WON!!!", 320.0, Height / 2 - 20.0, 1.0, glm::vec3(0.0, 1.0, 0.0)
+		);
+		Text->RenderText(
+			"Press ENTER to retry or ESC to quit", 130.0, Height / 2, 1.0, glm::vec3(1.0, 1.0, 0.0)
+		);
 	}
 }
 
 
 void Game::ResetLevel()
 {
-	if (this->Level == 0)this->Levels[0].Load("levels/one.lvl", this->Width, this->Height * 0.5f);
+	if (this->Level == 0)
+		this->Levels[0].Load("levels/one.lvl", this->Width, this->Height * 0.5f);
 	else if (this->Level == 1)
 		this->Levels[1].Load("levels/two.lvl", this->Width, this->Height * 0.5f);
 	else if (this->Level == 2)
 		this->Levels[2].Load("levels/three.lvl", this->Width, this->Height * 0.5f);
 	else if (this->Level == 3)
 		this->Levels[3].Load("levels/four.lvl", this->Width, this->Height * 0.5f);
+	this->Lives = 3;
 }
 
 void Game::ResetPlayer()
@@ -267,7 +334,7 @@ void Game::SpwanPowerUps(GameObject &block)
 	}
 	else if (ShouldSpawn(75))
 		this->PowerUps.push_back(
-			PowerUp("pass-through", glm::vec3(0.5f, 1.0f, 0.5f), 10.0f, block.Position, ResourceManager::GetTexture("powerup_pass")
+			PowerUp("pass-through", glm::vec3(0.5f, 1.0f, 0.5f), 10.0f, block.Position, ResourceManager::GetTexture("powerup_passthrough")
 			));
 	else if (ShouldSpawn(75))
 		this->PowerUps.push_back(
@@ -359,7 +426,7 @@ void Game::DoCollisions()
 				// Collision resolution
 				Direction dir = std::get<1>(collision);
 				glm::vec2 diff_vector = std::get<2>(collision);
-				if (!(Ball->PassThrough && !box.IsSolid))
+ 				if (!(Ball->PassThrough && !box.IsSolid))
 				{
 					if (dir == LEFT || dir == RIGHT) // Horizontal collision
 					{
@@ -423,10 +490,10 @@ void Game::DoCollisions()
 GLboolean CheckCollision(GameObject &one, GameObject &two) // AABB - AABB collision
 {
 	// Collision x-axis?
-	bool collisionX = one.Position.x + one.Size.x >= two.Position.x &&
+	GLboolean collisionX = one.Position.x + one.Size.x >= two.Position.x &&
 		two.Position.x + two.Size.x >= one.Position.x;
 	// Collision y-axis?
-	bool collisionY = one.Position.y + one.Size.y >= two.Position.y &&
+	GLboolean collisionY = one.Position.y + one.Size.y >= two.Position.y &&
 		two.Position.y + two.Size.y >= one.Position.y;
 	// Collision only if on both axes
 	return collisionX && collisionY;
